@@ -1,6 +1,7 @@
 import { visibleWidth } from "@earendil-works/pi-tui";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { stripAnsi } from "../src/colors.js";
 import { configWithPreset, DEFAULT_CONFIG, normalizeConfig } from "../src/config.js";
 import { renderStatuslines as renderStatuslinesFromStore } from "../src/render.js";
 import type { StatuslineData, WidgetEntry } from "../src/types.js";
@@ -473,6 +474,59 @@ describe("renderStatusline", () => {
     );
     expect(visibleWidth(line)).toBe(80);
     expect(line).toContain("cost $0.1234");
+  });
+
+  it("truncates the left side of a flex layout before the right side", () => {
+    const line = renderStatusline(
+      {
+        ...plainConfig,
+        separator: "none",
+        lines: [
+          [
+            registry.createEntry("custom-text", {
+              raw: true,
+              text: "bug-new-worktree-card-style-makes-completed-but · long-feature-branch",
+            }),
+            registry.createEntry("flex-separator"),
+            registry.createEntry("custom-text", {
+              raw: true,
+              text: "opencode · muse-spark-1.3-contributor-free · xhigh",
+            }),
+          ],
+        ],
+      },
+      data,
+      80,
+    );
+
+    const plain = stripAnsi(line);
+    expect(visibleWidth(line)).toBe(80);
+    expect(plain.endsWith("opencode · muse-spark-1.3-contributor-free · xhigh")).toBe(true);
+    expect(plain).toMatch(/^bug-new-worktree.*… +opencode/);
+  });
+
+  it("uses the whole width for an oversized right side of a flex layout", () => {
+    const line = renderStatusline(
+      {
+        ...plainConfig,
+        separator: "none",
+        lines: [
+          [
+            registry.createEntry("custom-text", { raw: true, text: "left" }),
+            registry.createEntry("flex-separator"),
+            registry.createEntry("custom-text", {
+              raw: true,
+              text: "model-and-thinking-that-do-not-fit",
+            }),
+          ],
+        ],
+      },
+      data,
+      12,
+    );
+
+    expect(visibleWidth(line)).toBe(12);
+    expect(stripAnsi(line)).toBe("model-and-t…");
   });
 
   it("respects width", () => {

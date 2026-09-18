@@ -39,8 +39,15 @@ export function renderStatuslines(
 }
 
 function padRight(left: string, right: string, width: number): string {
-  const spaces = Math.max(1, width - visibleWidth(left) - visibleWidth(right));
-  return truncateToWidth(`${left}${" ".repeat(spaces)}${right}`, width, "…");
+  const rightWidth = visibleWidth(right);
+  if (rightWidth >= width) return truncateToWidth(right, width, "…");
+
+  // The right side carries high-priority state such as model and thinking level. Fit the
+  // left side into the remaining columns first so a long cwd or branch cannot push that
+  // state past the terminal edge.
+  const fittedLeft = truncateToWidth(left, width - rightWidth - 1, "…");
+  const spaces = width - visibleWidth(fittedLeft) - rightWidth;
+  return `${fittedLeft}${" ".repeat(spaces)}${right}`;
 }
 
 interface RenderedSegment {
