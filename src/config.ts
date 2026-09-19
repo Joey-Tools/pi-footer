@@ -3,21 +3,21 @@ import { dirname, join } from "node:path";
 
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 
-import type { ColorLevel } from "./colors.js";
-import { COLOR_LEVEL_VALUES, normalizeColor } from "./colors.js";
+import type { ColorLevel } from "./colors.ts";
+import { COLOR_LEVEL_VALUES, normalizeColor } from "./colors.ts";
 import {
   cloneExtensionStatusRow,
   DEFAULT_EXTENSION_STATUS_ROW,
   normalizeExtensionStatusRow,
-} from "./extension-statuses.js";
-import { DEFAULT_GIT_REFRESH_INTERVAL_MS, MIN_GIT_REFRESH_INTERVAL_MS } from "./git.js";
+} from "./extension-statuses.ts";
+import { DEFAULT_GIT_REFRESH_INTERVAL_MS, MIN_GIT_REFRESH_INTERVAL_MS } from "./git.ts";
 import {
   PRESET_DEFINITIONS,
   type Preset,
   type PresetDefinition,
   type PresetWidget,
-} from "./presets.js";
-import { SEPARATOR_VALUES, type SeparatorStyle } from "./separators.js";
+} from "./presets.ts";
+import { SEPARATOR_VALUES, type SeparatorStyle } from "./separators.ts";
 import type {
   IconMode,
   StatuslineConfig,
@@ -25,9 +25,9 @@ import type {
   TerminalOptions,
   TerminalWidthMode,
   WidgetEntry,
-} from "./types.js";
-import { ICON_MODE_VALUES, isRecord, TERMINAL_WIDTH_MODE_VALUES } from "./types.js";
-import { registry, type WidgetType } from "./widgets/registry.js";
+} from "./types.ts";
+import { ICON_MODE_VALUES, isRecord, TERMINAL_WIDTH_MODE_VALUES } from "./types.ts";
+import { registry, type WidgetType } from "./widgets/registry.ts";
 
 export const STATUS_KEY = "pi-footer";
 

@@ -2,8 +2,8 @@ import { basename } from "node:path";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-import { asyncCache, CACHE_NAMESPACES } from "./cache.js";
-import type { GitInfo, StatuslineConfig } from "./types.js";
+import { asyncCache, CACHE_NAMESPACES } from "./cache.ts";
+import type { GitInfo, StatuslineConfig } from "./types.ts";
 
 // How long git info stays fresh. Each refresh runs up to 7 git subprocesses, so a short interval
 // adds steady load even when the session is idle. Branch switches still show at once: the branch
