@@ -18,7 +18,7 @@ That install added `@earendil-works/pi-coding-agent` and `@earendil-works/pi-tui
 `ERR_PNPM_IGNORED_BUILDS` for `@google/genai` and `protobufjs`, which those
 peers pull in.
 
-## Root cause
+## Observed CI configuration mismatch
 
 Each `--config.*` flag reached pnpm twice:
 
@@ -34,10 +34,12 @@ job's own `pnpm install --prod --no-frozen-lockfile` with each flag given once
 installed only `chalk`. Given twice, pnpm behaved as if the settings were at
 their pnpm 11 defaults (peers auto-installed, strict dependency builds on).
 
-Why pnpm drops repeated `--config.*` values has not been confirmed. pnpm's
-argument parser passes `--config.<key>` options it does not declare through as
-raw values, and `@pnpm/nopt` turns a repeated undeclared option into an array.
-Whether `install` declares these keys in 11.28.9 was not checked.
+The failing invocation also puts the first set of flags before `install`, while
+the passing standalone invocation puts them after it and uses
+`--no-frozen-lockfile` in the checkout rather than Pi's clone. Removing the
+redundant workflow arguments repairs the managed install, but does not isolate
+whether duplication, option position, or their interaction caused pnpm's parser
+behavior. The exact parser mechanism is not claimed to be proven.
 
 ## Fix
 
@@ -57,6 +59,13 @@ Whether `install` declares these keys in 11.28.9 was not checked.
 
 ## Status
 
-Verified locally: the guard's fixture tests and the project checks pass. Not yet
-verified: the fixed `pnpm / git` job and the guard on GitHub Actions for npm,
-pnpm and bun. That needs a workflow run on the PR.
+Verified locally: all 507 existing Vitest tests, 16 guard fixture tests,
+typecheck, formatting, and lint pass.
+
+Verified on GitHub Actions at repair commit `ee0b0bb39bf5e21598f3756ba4a7cdae3e9fadab`:
+[install-smoke run 40952773955](https://github.com/Joey-Tools/pi-footer/actions/runs/40952773955)
+passes **all six** PR install paths (Git and relative path with npm, pnpm 11,
+and Bun), including the new peer-isolation guard for all three Git installs.
+[Main CI run 40952773881](https://github.com/Joey-Tools/pi-footer/actions/runs/40952773881)
+also passes, including the 16 Node fixture tests. No runtime footer changes or
+pnpm major-version downgrade were needed.
