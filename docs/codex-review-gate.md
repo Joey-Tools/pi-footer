@@ -1,4 +1,14 @@
-# Codex review gate — staged installation
+# Codex review gate — blocked staged installation
+
+> **Do not merge or activate yet:** `Joey-Tools/pi-footer` is a GitHub fork, and
+> the current action explicitly does not support fork repositories. The live
+> [verifier run](https://github.com/Joey-Tools/pi-footer/actions/runs/40952099769)
+> returned `unsupported_target`, `retry_safe: false`: "Action v2 does not support
+> installation on a fork repository." Retrying the same workflow cannot fix it.
+> The PR remains draft. No gate skip, action-policy bypass, repository detachment,
+> or protection activation is performed here. A supported repository target or
+> an officially supported action release is a separate owner decision before
+> proceeding. Activating the supplied requirement now would block all merges.
 
 This change prepares the repository-side assets from
 [`Joey-Tools/codex-gated-repo-template`](https://github.com/Joey-Tools/codex-gated-repo-template)
@@ -48,7 +58,9 @@ The read-only default-workflow-permissions preflight returned **HTTP 403** for
 No alternate identity or setting write was attempted. Before merge/activation,
 an authorized owner must complete the guide's preflight and approval snapshot:
 
-1. Verify the default workflow token permission is `read`, the effective owner
+1. First resolve the unsupported-fork target through a separately approved
+   repository/action decision, and verify that the action accepts the resulting
+   target. Then verify the default workflow token permission is `read`, the effective owner
    is eligible, and any existing protection/legacy gate inventory is completely
    read and preserved. Stop on missing authority or an inconclusive inventory.
 2. Obtain `@JoeyTeng`'s independent approval of the installation PR's exact final
