@@ -171,8 +171,8 @@ export default async function statuslineExtension(pi: ExtensionAPI): Promise<voi
     apply(ctx);
   });
 
-  // Git info is cached for gitRefreshIntervalMs. Refetch once when a run ends so edits and
-  // commits made by the agent show at once instead of after the interval.
+  // Git info is cached for gitRefreshIntervalMs. Mark it stale when a run ends and request a
+  // render, so the agent's edits and commits are fetched without waiting out the interval.
   pi.on("agent_end", () => {
     asyncCache.invalidate(CACHE_NAMESPACES.git);
     renderCurrentFooter?.();

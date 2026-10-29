@@ -232,7 +232,7 @@ The **Value example** column shows the widget value before labels/icons and colo
 | `Git Ahead/Behind` | Ahead/behind counts relative to upstream. | Hide when empty. | `↑1 ↓0` |
 | `Git Remote` | `origin` remote URL. | Hide when empty. | `git@github.com:user/repo.git` |
 
-Git widgets share one cached snapshot. It refreshes at most every `gitRefreshIntervalMs` milliseconds (default `30000`, minimum `1000`), and at once when an agent run ends or the branch changes. Each refresh runs several `git` commands, so a longer interval means less background load. Changes made outside pi can take up to the interval to show.
+Git widgets share one cached snapshot, and pi-footer does not poll for changes. Freshness is checked only when the footer renders. If the snapshot is younger than `gitRefreshIntervalMs` milliseconds (default `30000`, minimum `1000`), it is reused. Otherwise the old snapshot stays on screen while a refresh runs in the background, and the footer repaints when the refresh finishes. When an agent run ends or pi reports a branch change, the snapshot is marked stale and a repaint is requested, so the refresh starts on that next render. Each refresh runs several `git` commands, so a longer interval means fewer refreshes while pi is busy. Changes made outside pi during an idle session show only after something renders the footer again, so there is no upper limit on how long they take to appear.
 
 The interval is set in the JSON config file only. `/footer reset` restores the default.
 

@@ -222,6 +222,31 @@ describe("footer hooks through the registered extension", () => {
     expect(host.gitRefreshes()).toBe(2);
   });
 
+  it("does not refresh git data on its own once the interval passes", async () => {
+    vi.useFakeTimers({
+      toFake: ["Date", "setTimeout", "clearTimeout", "setInterval", "clearInterval"],
+      now: Date.now(),
+    });
+    const host = await startFooter(gitLine());
+    host.render();
+    await settle();
+    host.tui.requestRender.mockClear();
+    const execCalls = host.exec.mock.calls.length;
+
+    vi.advanceTimersByTime(60_000);
+    await settle();
+    expect(host.exec.mock.calls).toHaveLength(execCalls);
+    expect(host.tui.requestRender).not.toHaveBeenCalled();
+
+    host.render();
+    expect(host.gitRefreshes()).toBe(2);
+    await settle();
+    expect(host.tui.requestRender).toHaveBeenCalledTimes(1);
+    host.render();
+    await settle();
+    expect(host.gitRefreshes()).toBe(2);
+  });
+
   it("uses a configured refresh interval", async () => {
     const host = await startFooter(gitLine(), { gitRefreshIntervalMs: 5000 });
     host.render();

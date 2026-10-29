@@ -58,7 +58,7 @@ The unmodified base passed **507 tests** across 99 files, typecheck, formatting,
 and lint before integration. The selected upstream commits, before local
 regression additions, passed **514 tests** and the same gates.
 
-The completed integration passes **539 tests** across 104 files, typecheck,
+The completed integration passes **540 tests** across 104 files, typecheck,
 formatting, and lint. Source and production-tarball loader/render checks pass
 against both the locked development peer (Pi 0.87.1) and the installed Pi 1.4.0
 host, on Node 25.8.2. The tarball has 119 files and its production install contains

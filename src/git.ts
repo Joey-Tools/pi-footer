@@ -5,9 +5,9 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { asyncCache, CACHE_NAMESPACES } from "./cache.ts";
 import type { GitInfo, StatuslineConfig } from "./types.ts";
 
-// How long git info stays fresh. Each refresh runs up to 7 git subprocesses, so a short interval
-// adds steady load even when the session is idle. Branch switches still show at once: the branch
-// hint from pi is part of the cache key.
+// How long git info stays fresh. Age is checked only when a footer render reads it; nothing polls.
+// Each refresh runs up to 7 git subprocesses, so a short interval adds load on every busy render.
+// A new branch hint from pi is part of the cache key, so it never reuses the old branch's entry.
 export const DEFAULT_GIT_REFRESH_INTERVAL_MS = 30_000;
 export const MIN_GIT_REFRESH_INTERVAL_MS = 1000;
 
