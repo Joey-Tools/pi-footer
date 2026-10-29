@@ -26,3 +26,12 @@ jobs:
       - run: npm run fmt:check
       - run: npm run lint
       - run: npm run test
+      - run: npm run smoke:extension
+      - run: npm run smoke:package
+      - name: Install Pi 1.4 integration-test host
+        run: npm install --prefix "$RUNNER_TEMP/pi-footer-host" --ignore-scripts --no-audit --no-fund @earendil-works/pi-coding-agent@1.4.0
+      - name: Check source and production package on Pi 1.4
+        run: |
+          export PI_FOOTER_HOST_DIR="$RUNNER_TEMP/pi-footer-host/node_modules/@earendil-works/pi-coding-agent"
+          npm run smoke:extension
+          npm run smoke:package

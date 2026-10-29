@@ -279,7 +279,9 @@ Terminal color levels: Truecolor, 256 Color, Basic 16-color, No Color.
 
 ### Separators
 
-Global separator modes: `none`, `dot`, `pipe`, `space`, `powerline`, `dash`, `comma`
+Global separator modes: `none`, `dot`, `pipe`, `space`, `powerline`, `chevron`, `chevron-circle`, `arrow-circle`, `dash`, `comma`
+
+`powerline`, `chevron`, `chevron-circle`, and `arrow-circle` draw Nerd Font glyphs whatever the icon mode is. Without a Nerd Font they show as missing-glyph boxes; pick `dot`, `pipe`, `dash`, `comma`, or `space` instead.
 
 Global separator foreground/background colors apply only to automatic separators inserted between widgets.
 
@@ -351,6 +353,16 @@ npm run fmt
 npm run typecheck
 npm run test
 ```
+
+Offline host checks load the extension through pi's public SDK in an isolated home, agent, session, and temp directory. They make no model or provider requests and never touch your own pi settings:
+
+```bash
+npm run smoke:extension   # load this checkout through its package.json pi.extensions entry
+npm run smoke:package     # npm pack, install only runtime dependencies, then load the tarball
+npm run benchmark:import -- [package-dir] --runs 10 [--cold]
+```
+
+They use the `@earendil-works/pi-coding-agent` peer installed by `npm ci`. Set `PI_FOOTER_HOST_DIR` (or `PI_PACKAGE_DIR`) to an installed pi package directory to test against that host instead. `smoke:package` downloads runtime dependencies from the npm registry. `benchmark:import` reports `extensionLoadMs`: the time `discoverAndLoadExtensions()` takes to resolve, transform, and evaluate the package and run its factory, measured in a fresh process after the host SDK import. It is not full CLI startup time. `--cold` starts every sample with an empty jiti transform cache.
 
 ## Credits
 

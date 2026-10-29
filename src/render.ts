@@ -44,10 +44,13 @@ function padRight(left: string, right: string, width: number): string {
 
   // The right side carries high-priority state such as model and thinking level. Fit the
   // left side into the remaining columns first so a long cwd or branch cannot push that
-  // state past the terminal edge.
-  const fittedLeft = truncateToWidth(left, width - rightWidth - 1, "…");
-  const spaces = width - visibleWidth(fittedLeft) - rightWidth;
-  return `${fittedLeft}${" ".repeat(spaces)}${right}`;
+  // state past the terminal edge. One column always separates the two groups; when nothing
+  // fits beside that gap, the left side is dropped rather than letting it touch the right.
+  const leftBudget = width - rightWidth - 1;
+  const fittedLeft = leftBudget > 0 ? truncateToWidth(left, leftBudget, "…") : "";
+  const keptLeft = visibleWidth(fittedLeft) <= leftBudget ? fittedLeft : "";
+  const spaces = width - visibleWidth(keptLeft) - rightWidth;
+  return `${keptLeft}${" ".repeat(spaces)}${right}`;
 }
 
 interface RenderedSegment {

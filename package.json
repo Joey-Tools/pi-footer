@@ -47,6 +47,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
+    "smoke:extension": "node scripts/smoke-extension.mjs",
+    "smoke:package": "node scripts/smoke-extension.mjs --pack",
+    "benchmark:import": "node scripts/benchmark-import.mjs",
     "prepublishOnly": "npm run typecheck && npm run fmt:check && npm run lint && npm run test"
   },
   "peerDependencies": {
