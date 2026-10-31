@@ -22,6 +22,7 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci
+      - run: node --test test/ci-runtime-deps.node-test.mjs
       - run: npm run typecheck
       - run: npm run fmt:check
       - run: npm run lint
