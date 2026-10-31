@@ -1,14 +1,14 @@
 import type { Theme } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
-import { applyColors } from "./colors.js";
-import type { GetExtensionStatuses } from "./extension-statuses.js";
-import { separatorText } from "./separators.js";
-import type { StatuslineData, StatuslineSettings } from "./types.js";
-import { contextForDependencies } from "./widgets/context.js";
-import { registry } from "./widgets/registry.js";
-import type { WidgetStore } from "./widgets/store.js";
-import type { BaseWidgetContext, Widget } from "./widgets/types.js";
+import { applyColors } from "./colors.ts";
+import type { GetExtensionStatuses } from "./extension-statuses.ts";
+import { separatorText } from "./separators.ts";
+import type { StatuslineData, StatuslineSettings } from "./types.ts";
+import { contextForDependencies } from "./widgets/context.ts";
+import { registry } from "./widgets/registry.ts";
+import type { WidgetStore } from "./widgets/store.ts";
+import type { BaseWidgetContext, Widget } from "./widgets/types.ts";
 
 export interface RenderStatuslineOptions {
   getExtensionStatuses?: GetExtensionStatuses;
@@ -39,8 +39,18 @@ export function renderStatuslines(
 }
 
 function padRight(left: string, right: string, width: number): string {
-  const spaces = Math.max(1, width - visibleWidth(left) - visibleWidth(right));
-  return truncateToWidth(`${left}${" ".repeat(spaces)}${right}`, width, "…");
+  const rightWidth = visibleWidth(right);
+  if (rightWidth >= width) return truncateToWidth(right, width, "…");
+
+  // The right side carries high-priority state such as model and thinking level. Fit the
+  // left side into the remaining columns first so a long cwd or branch cannot push that
+  // state past the terminal edge. One column always separates the two groups; when nothing
+  // fits beside that gap, the left side is dropped rather than letting it touch the right.
+  const leftBudget = width - rightWidth - 1;
+  const fittedLeft = leftBudget > 0 ? truncateToWidth(left, leftBudget, "…") : "";
+  const keptLeft = visibleWidth(fittedLeft) <= leftBudget ? fittedLeft : "";
+  const spaces = width - visibleWidth(keptLeft) - rightWidth;
+  return `${keptLeft}${" ".repeat(spaces)}${right}`;
 }
 
 interface RenderedSegment {

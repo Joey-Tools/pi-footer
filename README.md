@@ -232,6 +232,14 @@ The **Value example** column shows the widget value before labels/icons and colo
 | `Git Ahead/Behind` | Ahead/behind counts relative to upstream. | Hide when empty. | `↑1 ↓0` |
 | `Git Remote` | `origin` remote URL. | Hide when empty. | `git@github.com:user/repo.git` |
 
+Git widgets share one cached snapshot, and pi-footer does not poll for changes. Freshness is checked only when the footer renders. If the snapshot is younger than `gitRefreshIntervalMs` milliseconds (default `30000`, minimum `1000`), it is reused. Otherwise the old snapshot stays on screen while a refresh runs in the background, and the footer repaints when the refresh finishes. When an agent run ends or pi reports a branch change, the snapshot is marked stale and a repaint is requested, so the refresh starts on that next render. Each refresh runs several `git` commands, so a longer interval means fewer refreshes while pi is busy. Changes made outside pi during an idle session show only after something renders the footer again, so there is no upper limit on how long they take to appear.
+
+The interval is set in the JSON config file only. `/footer reset` restores the default.
+
+```json
+{ "gitRefreshIntervalMs": 60000 }
+```
+
 ### Custom and layout widgets
 
 | Widget | Shows | Widget-specific options | Value example |
@@ -271,7 +279,9 @@ Terminal color levels: Truecolor, 256 Color, Basic 16-color, No Color.
 
 ### Separators
 
-Global separator modes: `none`, `dot`, `pipe`, `space`, `powerline`, `dash`, `comma`
+Global separator modes: `none`, `dot`, `pipe`, `space`, `powerline`, `chevron`, `chevron-circle`, `arrow-circle`, `dash`, `comma`
+
+`powerline`, `chevron`, `chevron-circle`, and `arrow-circle` draw Nerd Font glyphs whatever the icon mode is. Without a Nerd Font they show as missing-glyph boxes; pick `dot`, `pipe`, `dash`, `comma`, or `space` instead.
 
 Global separator foreground/background colors apply only to automatic separators inserted between widgets.
 
@@ -343,6 +353,16 @@ npm run fmt
 npm run typecheck
 npm run test
 ```
+
+Offline host checks load the extension through pi's public SDK in an isolated home, agent, session, and temp directory. They make no model or provider requests and never touch your own pi settings:
+
+```bash
+npm run smoke:extension   # load this checkout through its package.json pi.extensions entry
+npm run smoke:package     # npm pack, install only runtime dependencies, then load the tarball
+npm run benchmark:import -- [package-dir] --runs 10 [--cold]
+```
+
+They use the `@earendil-works/pi-coding-agent` peer installed by `npm ci`. Set `PI_FOOTER_HOST_DIR` (or `PI_PACKAGE_DIR`) to an installed pi package directory to test against that host instead. `smoke:package` downloads runtime dependencies from the npm registry. `benchmark:import` reports `extensionLoadMs`: the time `discoverAndLoadExtensions()` takes to resolve, transform, and evaluate the package and run its factory, measured in a fresh process after the host SDK import. It is not full CLI startup time. `--cold` starts every sample with an empty jiti transform cache.
 
 ## Credits
 

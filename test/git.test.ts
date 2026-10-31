@@ -1,8 +1,8 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { asyncCache } from "../src/cache.js";
-import { EMPTY_GIT_INFO, getGitInfo, loadGitInfo } from "../src/git.js";
+import { asyncCache } from "../src/cache.ts";
+import { EMPTY_GIT_INFO, getGitInfo, loadGitInfo } from "../src/git.ts";
 
 type ExecResult = { stdout: string; stderr: string; code: number; killed: boolean };
 type ExecMock = (command: string, args: string[], options?: unknown) => Promise<ExecResult>;
@@ -148,5 +148,48 @@ describe("getGitInfo (SWR)", () => {
     getGitInfo(pi, "/repo", "feature/cache", requestRender);
     await vi.waitFor(() => expect(requestRender).toHaveBeenCalledTimes(2));
     expect(getGitInfo(pi, "/repo", "feature/cache", requestRender).branch).toBe("feature/cache");
+  });
+
+  it("refreshes only after the configured interval", async () => {
+    let now = 1_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    const exec = gitExec();
+    const pi = piWith(exec);
+    const requestRender = vi.fn<() => void>();
+
+    getGitInfo(pi, "/repo", "main", requestRender, 60_000);
+    await vi.waitFor(() => expect(requestRender).toHaveBeenCalledTimes(1));
+    expect(exec).toHaveBeenCalledTimes(6);
+
+    // Inside the interval: cached, no new git commands.
+    now += 59_999;
+    getGitInfo(pi, "/repo", "main", requestRender, 60_000);
+    expect(exec).toHaveBeenCalledTimes(6);
+
+    // Past the interval: one new refresh.
+    now += 1;
+    getGitInfo(pi, "/repo", "main", requestRender, 60_000);
+    await vi.waitFor(() => expect(requestRender).toHaveBeenCalledTimes(2));
+    expect(exec).toHaveBeenCalledTimes(12);
+  });
+
+  it("defaults to a 30 second refresh interval", async () => {
+    let now = 1_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    const exec = gitExec();
+    const pi = piWith(exec);
+    const requestRender = vi.fn<() => void>();
+
+    getGitInfo(pi, "/repo", "main", requestRender);
+    await vi.waitFor(() => expect(requestRender).toHaveBeenCalledTimes(1));
+
+    now += 29_999;
+    getGitInfo(pi, "/repo", "main", requestRender);
+    expect(exec).toHaveBeenCalledTimes(6);
+
+    now += 1;
+    getGitInfo(pi, "/repo", "main", requestRender);
+    await vi.waitFor(() => expect(requestRender).toHaveBeenCalledTimes(2));
+    expect(exec).toHaveBeenCalledTimes(12);
   });
 });

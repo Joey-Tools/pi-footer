@@ -24,7 +24,7 @@
   },
   "overrides": [
     {
-      "files": ["test/**/*.ts", "vitest.config.ts"],
+      "files": ["test/**/*.ts", "vitest.config.ts", "scripts/**/*.mjs"],
       "rules": {
         "no-console": "off"
       }

@@ -2,10 +2,14 @@ import { basename } from "node:path";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-import { asyncCache, CACHE_NAMESPACES } from "./cache.js";
-import type { GitInfo, StatuslineConfig } from "./types.js";
+import { asyncCache, CACHE_NAMESPACES } from "./cache.ts";
+import type { GitInfo, StatuslineConfig } from "./types.ts";
 
-const CACHE_TTL_MS = 2000;
+// How long git info stays fresh. Age is checked only when a footer render reads it; nothing polls.
+// Each refresh runs up to 7 git subprocesses, so a short interval adds load on every busy render.
+// A new branch hint from pi is part of the cache key, so it never reuses the old branch's entry.
+export const DEFAULT_GIT_REFRESH_INTERVAL_MS = 30_000;
+export const MIN_GIT_REFRESH_INTERVAL_MS = 1000;
 
 export const EMPTY_GIT_INFO: GitInfo = {
   branch: null,
@@ -36,12 +40,13 @@ export function getGitInfo(
   cwd: string,
   branchHint: string | null,
   requestRender: () => void,
+  refreshIntervalMs = DEFAULT_GIT_REFRESH_INTERVAL_MS,
 ): GitInfo {
   return (
     asyncCache.get(
       CACHE_NAMESPACES.git,
       `${cwd}:${branchHint ?? ""}`,
-      CACHE_TTL_MS,
+      refreshIntervalMs,
       { pi, cwd, branchHint },
       fetchGitInfo,
       requestRender,

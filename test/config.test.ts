@@ -1,5 +1,5 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
-import { registry } from "../src/widgets/registry.js";
+import { registry } from "../src/widgets/registry.ts";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -13,7 +13,7 @@ import {
   loadConfig,
   normalizeConfig,
   saveConfig,
-} from "../src/config.js";
+} from "../src/config.ts";
 
 let tempDir: string | undefined;
 const originalConfigEnv = process.env.PI_FOOTER_CONFIG;
@@ -53,6 +53,19 @@ describe("config", () => {
     expect(normalizeConfig({ iconMode: "nerd" }).iconMode).toBe("nerd");
     expect(normalizeConfig({ iconMode: "text" }).iconMode).toBe("text");
     expect(normalizeConfig({ iconMode: "nonsense" }).iconMode).toBe(DEFAULT_CONFIG.iconMode);
+  });
+
+  it("normalizes the git refresh interval", () => {
+    expect(normalizeConfig({}).gitRefreshIntervalMs).toBe(30_000);
+    expect(normalizeConfig({ gitRefreshIntervalMs: 60_000 }).gitRefreshIntervalMs).toBe(60_000);
+    expect(normalizeConfig({ gitRefreshIntervalMs: 1500.4 }).gitRefreshIntervalMs).toBe(1500);
+    expect(normalizeConfig({ gitRefreshIntervalMs: 0 }).gitRefreshIntervalMs).toBe(1000);
+    expect(normalizeConfig({ gitRefreshIntervalMs: -5 }).gitRefreshIntervalMs).toBe(1000);
+    expect(normalizeConfig({ gitRefreshIntervalMs: "60000" }).gitRefreshIntervalMs).toBe(30_000);
+    expect(normalizeConfig({ gitRefreshIntervalMs: Number.NaN }).gitRefreshIntervalMs).toBe(30_000);
+    expect(
+      normalizeConfig({ gitRefreshIntervalMs: Number.POSITIVE_INFINITY }).gitRefreshIntervalMs,
+    ).toBe(30_000);
   });
 
   it("applies presets", () => {

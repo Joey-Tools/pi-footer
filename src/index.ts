@@ -13,18 +13,19 @@ import {
   loadConfig,
   saveConfig,
   STATUS_KEY,
-} from "./config.js";
-import { EventWidgetValues, UPDATE_EVENT_WIDGET_EVENT } from "./event-widgets.js";
+} from "./config.ts";
+import { asyncCache, CACHE_NAMESPACES } from "./cache.ts";
+import { EventWidgetValues, UPDATE_EVENT_WIDGET_EVENT } from "./event-widgets.ts";
 import {
   EMPTY_EXTENSION_STATUSES,
   visibleExtensionStatusRowEntries,
-} from "./extension-statuses.js";
-import { EMPTY_GIT_INFO, getGitInfo, hasEnabledGitWidgets, loadGitInfo } from "./git.js";
-import { collectSessionMetrics, collectTurnMetrics } from "./metrics.js";
-import { renderStatuslines } from "./render.js";
-import { isRecord, type GitInfo, type StatuslineConfig, type StatuslineData } from "./types.js";
-import { openStatuslineConfigUi } from "./ui.js";
-import { WidgetStore } from "./widgets/store.js";
+} from "./extension-statuses.ts";
+import { EMPTY_GIT_INFO, getGitInfo, hasEnabledGitWidgets, loadGitInfo } from "./git.ts";
+import { collectSessionMetrics, collectTurnMetrics } from "./metrics.ts";
+import { renderStatuslines } from "./render.ts";
+import { isRecord, type GitInfo, type StatuslineConfig, type StatuslineData } from "./types.ts";
+import { openStatuslineConfigUi } from "./ui.ts";
+import { WidgetStore } from "./widgets/store.ts";
 
 // Structural mirror of pi's footerData — collectStatuslineData only needs the branch getter.
 interface FooterDataLike {
@@ -50,7 +51,10 @@ export default async function statuslineExtension(pi: ExtensionAPI): Promise<voi
     ctx.ui.setFooter((tui, theme, footerData) => {
       getExtensionStatuses = () => footerData.getExtensionStatuses();
       renderCurrentFooter = () => tui.requestRender();
-      const unsubscribeBranch = footerData.onBranchChange(() => tui.requestRender());
+      const unsubscribeBranch = footerData.onBranchChange(() => {
+        asyncCache.invalidate(CACHE_NAMESPACES.git);
+        tui.requestRender();
+      });
       return {
         dispose(): void {
           unsubscribeBranch();
@@ -167,6 +171,13 @@ export default async function statuslineExtension(pi: ExtensionAPI): Promise<voi
     apply(ctx);
   });
 
+  // Git info is cached for gitRefreshIntervalMs. Mark it stale when a run ends and request a
+  // render, so the agent's edits and commits are fetched without waiting out the interval.
+  pi.on("agent_end", () => {
+    asyncCache.invalidate(CACHE_NAMESPACES.git);
+    renderCurrentFooter?.();
+  });
+
   pi.on("session_shutdown", (_event, ctx) => {
     ctx.ui.setFooter(undefined);
     ctx.ui.setStatus(STATUS_KEY, undefined);
@@ -199,7 +210,13 @@ function collectStatuslineData(
     git:
       options.git ??
       (collectGit
-        ? getGitInfo(pi, ctx.cwd, footerData.getGitBranch(), options.requestRender ?? (() => {}))
+        ? getGitInfo(
+            pi,
+            ctx.cwd,
+            footerData.getGitBranch(),
+            options.requestRender ?? (() => {}),
+            options.config?.gitRefreshIntervalMs,
+          )
         : EMPTY_GIT_INFO),
     cwd: ctx.cwd,
     activeToolCount: pi.getActiveTools().length,

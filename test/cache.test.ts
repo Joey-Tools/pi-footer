@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { AsyncCache, CACHE_NAMESPACES, asyncCache } from "../src/cache.js";
+import { AsyncCache, CACHE_NAMESPACES, asyncCache } from "../src/cache.ts";
 
 function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   let resolve!: (value: T) => void;
@@ -59,6 +59,44 @@ describe("AsyncCache", () => {
 
     now = 1_050;
     expect(cache.get(CACHE_NAMESPACES.runtime, "/repo", 10, "/repo", fetcher)).toBe("node");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("invalidate keeps the value but forces a refetch in that namespace only", async () => {
+    const now = 1_000;
+    const cache = new AsyncCache(200, () => now);
+    const fetcher = vi.fn<(cwd: string) => Promise<string | null>>(async () => "main");
+
+    cache.get(CACHE_NAMESPACES.git, "/repo", 100, "/repo", fetcher);
+    cache.get(CACHE_NAMESPACES.runtime, "/repo", 100, "/repo", fetcher);
+    await Promise.resolve();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+
+    cache.invalidate(CACHE_NAMESPACES.git);
+
+    expect(cache.get(CACHE_NAMESPACES.git, "/repo", 100, "/repo", fetcher)).toBe("main");
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(cache.get(CACHE_NAMESPACES.runtime, "/repo", 100, "/repo", fetcher)).toBe("main");
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not mark a refresh fresh if it was invalidated while in flight", async () => {
+    const now = 1_000;
+    const cache = new AsyncCache(200, () => now);
+    const inFlight = deferred<string | null>();
+    const fetcher = vi
+      .fn<(cwd: string) => Promise<string | null>>()
+      .mockImplementationOnce(() => inFlight.promise)
+      .mockImplementation(async () => "after");
+
+    cache.get(CACHE_NAMESPACES.git, "/repo", 100, "/repo", fetcher);
+    cache.invalidate(CACHE_NAMESPACES.git);
+    inFlight.resolve("before");
+    await inFlight.promise;
+    await Promise.resolve();
+
+    // The pre-invalidation result is shown, but the next read refetches.
+    expect(cache.get(CACHE_NAMESPACES.git, "/repo", 100, "/repo", fetcher)).toBe("before");
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
