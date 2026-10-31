@@ -123,7 +123,14 @@ jobs:
               npm_command='["npm"]'
               ;;
             pnpm)
-              npm_command='["pnpm", "--config.auto-install-peers=false", "--config.strict-peer-dependencies=false", "--config.strict-dep-builds=false"]'
+              # pi already appends --config.auto-install-peers=false,
+              # --config.strict-peer-dependencies=false and
+              # --config.strict-dep-builds=false to its pnpm install commands.
+              # Repeating them here sent each flag twice; with pnpm 11 that
+              # install added the pi host peers and failed with
+              # ERR_PNPM_IGNORED_BUILDS, while the same flags given once (the
+              # local-path step below) install only runtime deps.
+              npm_command='["pnpm"]'
               ;;
             bun)
               npm_command='["bun"]'
@@ -193,6 +200,11 @@ jobs:
           set -euo pipefail
           pi install "${{ steps.source.outputs.source }}"
           pi list
+
+      - name: Verify git clone runtime dependencies
+        if: matrix.install-method == 'git'
+        shell: bash
+        run: node "$PACKAGE_DIR/.github/scripts/verify-git-runtime-deps.mjs"
 
       - name: Load pi-footer and verify rendered footer
         working-directory: ${{ github.workspace }}
